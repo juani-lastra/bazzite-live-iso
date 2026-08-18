@@ -33,12 +33,14 @@ jobs:
       - name: Espacio disponible tras la limpieza
         run: df -h /
 
-      # titanoboa monta la imagen como image volume de podman, y eso NO la
-      # descarga sola: tiene que estar ya presente localmente.
-      - name: Descargar la imagen de Bazzite
+      # titanoboa corre `sudo podman run --mount type=image,...`, o sea ROOTFUL,
+      # y no descarga la imagen sola. Podman rootless y rootful tienen almacenes
+      # separados, asi que el pull tiene que ser con sudo o root no la encuentra.
+      - name: Descargar la imagen de Bazzite (almacen de root)
         run: |
-          podman pull "${{ inputs.image_ref }}"
-          podman images --format '{{.Repository}}:{{.Tag}}  {{.Size}}'
+          sudo podman pull "${{ inputs.image_ref }}"
+          echo "--- imagenes visibles para root ---"
+          sudo podman images --format '{{.Repository}}:{{.Tag}}  {{.Size}}'
           df -h /
 
       - name: Construir el ISO live
