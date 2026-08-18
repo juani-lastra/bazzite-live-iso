@@ -1,0 +1,57 @@
+name: Build Bazzite Live ISO
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_ref:
+        description: "Imagen bootc de origen"
+        required: true
+        default: "ghcr.io/ublue-os/bazzite:stable"
+
+jobs:
+  build:
+    name: Construir ISO live
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    permissions:
+      contents: read
+
+    steps:
+      # El runner trae ~25 GB libres. La imagen de Bazzite descomprimida mas el
+      # ISO de salida no entran, asi que hay que vaciar el runner primero.
+      - name: Liberar espacio en el runner
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
+
+      - name: Espacio disponible tras la limpieza
+        run: df -h /
+
+      - name: Construir el ISO live
+        id: titanoboa
+        uses: ublue-os/titanoboa@main
+        with:
+          image-ref: ${{ inputs.image_ref }}
+          iso-dest: ${{ github.workspace }}/bazzite-live.iso
+
+      - name: Tamano y checksum
+        run: |
+          ls -lh bazzite-live.iso
+          sha256sum bazzite-live.iso | tee bazzite-live.iso.sha256
+          df -h /
+
+      - name: Subir el ISO como artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bazzite-live-iso
+          path: |
+            bazzite-live.iso
+            bazzite-live.iso.sha256
+          compression-level: 0
+          retention-days: 7
