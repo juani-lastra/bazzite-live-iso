@@ -33,6 +33,14 @@ jobs:
       - name: Espacio disponible tras la limpieza
         run: df -h /
 
+      # titanoboa monta la imagen como image volume de podman, y eso NO la
+      # descarga sola: tiene que estar ya presente localmente.
+      - name: Descargar la imagen de Bazzite
+        run: |
+          podman pull "${{ inputs.image_ref }}"
+          podman images --format '{{.Repository}}:{{.Tag}}  {{.Size}}'
+          df -h /
+
       - name: Construir el ISO live
         id: titanoboa
         uses: ublue-os/titanoboa@main
